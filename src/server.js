@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(cookieParser());
 
 app.use('/v1/auth', authRoute);
-app.use('/v1/user', userRoute);
+app.use('/v1/users', userRoute);
 
 app.listen(port, hostname, () => {
   console.log(`Server is running on port ${port}`)
