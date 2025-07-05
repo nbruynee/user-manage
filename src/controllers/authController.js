@@ -39,6 +39,29 @@ const authController = {
             res.status(500).json({ message: 'Registration failed!', error: err.message });
         }
     },
+
+    generateAccessToken: (user) => {
+        return jwt.sign(
+            {
+                id: user.id,
+                role: user.role,
+            },
+            process.env.JWT_ACCESS_KEY,
+            { expiresIn: '5m' },
+        );
+    },
+
+    generateRefreshToken: (user) => {
+        return jwt.sign(
+            {
+                id: user.id,
+                role: user.role,
+            },
+            process.env.JWT_REFRESH_KEY,
+            { expiresIn: '365d' },
+        );
+    },
+
     loginUser: async (req, res) => {
         const { email, password } = req.body;
         try {
@@ -54,25 +77,10 @@ const authController = {
                 res.status(400).json({ message: "Invalid password!" })
             }
             if (email && validPassword) {
-                const accessToken = jwt.sign(
-                    {
-                        id: user.id,
-                        role: user.role,
-                    },
-                    process.env.JWT_ACCESS_KEY,
-                    {expiresIn: '5m'},
-                );
-                
+                const accessToken = authController.generateAccessToken(user);
+                const refreshToken = authController.generateRefreshToken(user);
 
-                const refreshToken = jwt.sign(
-                    {
-                        id: user.id,
-                        role: user.role,
-                    },
-                    process.env.JWT_REFRESH_KEY,
-                    {expiresIn: '365d'},
-                );
-                const {password, profile, ...others} = user._doc;
+                const { password, profile, ...others } = user._doc;
                 res.status(200).json({ message: "Login successful", ...others, accessToken, refreshToken });
             }
         } catch (err) {
