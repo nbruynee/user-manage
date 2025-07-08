@@ -2,10 +2,22 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
+const JWT_ACCESS_KEY = process.env.JWT_ACCESS_KEY;
+
 const authController = {
     registerUser: async (req, res) => {
         try {
             const { email, password, name, phone } = req.body;
+
+            // validate email, password
+            if (!email || !password) {
+                return res.status(400).json({ message: "Email and password are required!" })
+            }
+
+            const existEmail = await User.findOne({ email });
+            if (existEmail) {
+                return res.status(400).json({ message: `Email ${email} already exist!` })
+            }
 
             //hash password
             const salt = await bcrypt.genSalt(10);
@@ -16,20 +28,19 @@ const authController = {
                 email,
                 password: hashed,
                 profile: {
-                    name: name,
-                    phone: phone
+                    name: name || '',
+                    phone: phone || '',
                 }
             })
 
             // save to DB 
             const user = await newUser.save();
 
-            res.status(200).json({
+            res.status(201).json({
                 message: "Register successful",
                 user: {
-                    id: user._id,
+                    id: user._id.toString(),
                     email: user.email,
-                    password: hashed,
                     role: user.role,
                     profile: user.profile
                 }
@@ -43,45 +54,39 @@ const authController = {
     generateAccessToken: (user) => {
         return jwt.sign(
             {
-                id: user.id,
+                id: user._id.toString(),
                 role: user.role,
             },
-            process.env.JWT_ACCESS_KEY,
-            { expiresIn: '5m' },
-        );
-    },
-
-    generateRefreshToken: (user) => {
-        return jwt.sign(
-            {
-                id: user.id,
-                role: user.role,
-            },
-            process.env.JWT_REFRESH_KEY,
-            { expiresIn: '365d' },
+            JWT_ACCESS_KEY,
+            { expiresIn: '30m' },
         );
     },
 
     loginUser: async (req, res) => {
         const { email, password } = req.body;
         try {
+            if (!email || !password) {
+                return res.status(400).json({ message: 'Email and password are required!' });
+            }
+
             const user = await User.findOne({ email: email });
             if (!user) {
-                res.status(404).json({ message: "Invalid email!" });
+                return res.status(404).json({ message: "Invalid email!" });
             }
+
             const validPassword = await bcrypt.compare(
                 password,
                 user.password
             )
+
             if (!validPassword) {
-                res.status(400).json({ message: "Invalid password!" })
+                return res.status(400).json({ message: "Invalid password!" })
             }
-            if (email && validPassword) {
+            if (email && password) {
                 const accessToken = authController.generateAccessToken(user);
-                const refreshToken = authController.generateRefreshToken(user);
 
                 const { password, profile, ...others } = user._doc;
-                res.status(200).json({ message: "Login successful", ...others, accessToken, refreshToken });
+                res.status(200).json({ message: "Login successful", ...others, accessToken });
             }
         } catch (err) {
             res.status(500).json({ message: 'Login failed!', error: err.message });

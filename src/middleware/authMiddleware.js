@@ -1,44 +1,44 @@
 const jwt = require("jsonwebtoken");
 
+const JWT_ACCESS_KEY = process.env.JWT_ACCESS_KEY;
+
 const middlewareController = {
     // verifyToken
     verifyToken: (req, res, next) => {
+        console.log('>>> [Middleware] verifyToken ĐƯỢC GỌI'); 
         const token = req.headers.token;
-        // console.log("Check token: ", token)
         if (token) {
             const accessToken = token.split(" ")[1];
-            jwt.verify(accessToken, process.env.JWT_ACCESS_KEY, (err, user) => {
+            if (!accessToken) {
+                return res.status(401).json({ message: "Tokens not provided" });
+            }
+            jwt.verify(accessToken, JWT_ACCESS_KEY, (err, user) => {
                 if (err) {
-                    res.status(403).json("Token is invalid or expired");
+                    console.error('>>> [Middleware] Lỗi JWT Verify:', err.message);
+                    return res.status(403).json("Token is invalid or expired");
                 }
                 req.user = user;
+                console.log('>>> [Middleware] Token VERIFIED, User role:', req.user.role);
                 next();
             });
         }
         else {
-            res.status(401).json("You are not authenticated")
+            console.log('>>> [Middleware] Không có token');
+            return res.status(401).json({ message: "You are not authenticated" })
         }
     },
 
-    verifyAdminGetAllUser: (req, res, next) => {
-        if (req.user && req.user.role == 'admin') {
+    verifyAdmin: (req, res, next) => {
+        console.log('>>> [Middleware] verifyAdmin ĐƯỢC GỌI');
+        if (req.user && req.user.role === 'admin') {
+            console.log('>>> [Middleware] verifyAdmin: LÀ ADMIN. Tiếp tục...');
             next();
         } else {
-            res.status(403).json({ message: "You don't have this access(just Admin)" })
+            console.log('>>> [Middleware] verifyAdmin: KHÔNG PHẢI ADMIN HOẶC KHÔNG CÓ QUYỀN. Chặn truy cập.');
+            return res.status(403).json({ message: "You don't have this access" })
         }
     },
 
-    // verify owner account or admin to delete
-    verifyTokenAndAdminAuth: (req, res, next) => {
-        middlewareController.verifyToken(req, res, () => {
-            if (req.user.role == "admin") {
-                next();
-            }
-            else {
-                res.status(403).json({ message: `You're not allowed to delete other!` });
-            }
-        })
-    }
 }
 
 module.exports = middlewareController;
