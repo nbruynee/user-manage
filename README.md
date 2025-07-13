@@ -1,12 +1,15 @@
 📌 User Management + Microservices Integration Platform
 
 📝 Project Introduction
+-----------------------------------------------------------------------------------------------------------------------
+
 This project is a mini user management system, designed and implemented as part of a Backend internship. The system includes user profile management, secure authentication, role-based access control (RBAC), and microservice architecture integration with a mock notification service.
 The main goal is to demonstrate good engineering practices, clean architecture, and interoperability between services.
------------------------------------------------------------------------------------------------------------------------
-✨ Key Features
 
+✨ Key Features
+-----------------------------------------------------------------------------------------------------------------------
 ✅ Functional Requirements
+-----------------------------------------------------------------------------------------------------------------------
 Authentication & Authorization:
 - Secure user registration and login.
 - Strong password hashing (using bcrypt).
@@ -22,23 +25,27 @@ Audit Logging:
 - Generate audit logs for each important action (user_id, action, timestamp, status, request_meta).
 
 🧱 Non-Functional Requirements
+-----------------------------------------------------------------------------------------------------------------------
 Clean / layered architecture.
 
 Environment configuration via .env file.
 Protect sensitive data in logs.
 Handling exceptions (validation, 404s, 401s, 500s).
 Git version control (clean commits).
------------------------------------------------------------------------------------------------------------------------
+
 🚀 Quick Start
+-----------------------------------------------------------------------------------------------------------------------
 You can run the entire system using Docker Compose or manually run each Node.js service.
 
 🐳 Running with Docker Compose (Recommended)
+-----------------------------------------------------------------------------------------------------------------------
 Make sure you have Docker Desktop (or Docker Engine) installed and running.
+
 1. Clone the Repository / Extract the file:
 ```bash
 git clone https://github.com/nbruynee/user-manage.git
 ```
-# or extract the ZIP file
+or extract the ZIP file
 
 2. Navigate to the project directory:
 ```bash
@@ -72,6 +79,7 @@ Main Backend: 'http://localhost:8081'
 Notification Service: 'http://localhost:8082' (endpoint: '/send')
 
 💻 Run manually (Without Docker)
+-----------------------------------------------------------------------------------------------------------------------
 1. Navigate to the project directory:
 ```bash
 cd User Management Project
@@ -111,10 +119,10 @@ cd User Management Project/notification-service
 
 node app.js
 ```
-7. Access the API:
-(Similar to Docker Compose)
------------------------------------------------------------------------------------------------------------------------
+7. Access the API: (Similar to Docker Compose)
+
 📚 API Documentation
+-----------------------------------------------------------------------------------------------------------------------
 The system provides the following RESTful endpoints:
 
 Authentication & Authorization
