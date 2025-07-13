@@ -107,7 +107,7 @@ Update 'JWT_ACCESS_KEY' and other values in the .env files.
 
 5. Launch the Main Backend
 ```bash
-cd "User Management Project"
+cd User Management Project
 
 node src/server.js
 ```
@@ -127,6 +127,7 @@ The system provides the following RESTful endpoints:
 
 Authentication & Authorization
 'POST /v1/auth/register'
+-----------------------------------------------------------------------------------------------------------------------
 Description: Registers a new user to the system.
 Body (JSON): 
 { 
@@ -156,6 +157,7 @@ Response (Failure - 400 Bad Request):
 { "message": "Email user@example.com already exists!" }
 
 'POST /v1/auth/login'
+-----------------------------------------------------------------------------------------------------------------------
 Description: Logs in the user and gets the JWT Access Token.
 Body (JSON): 
 { 
@@ -184,8 +186,9 @@ Response (Failure - 404 Not Found / 400 Bad Request):
 
 User Management
 (All of the following endpoints require a JWT Access Token in the header: 'Authorization: Bearer <ACCESS_TOKEN>')
-
+-----------------------------------------------------------------------------------------------------------------------
 'GET /v1/users/me'
+-----------------------------------------------------------------------------------------------------------------------
 Description: Gets the current user's profile information (based on the provided token).
 Authorization required: User & Admin.
 Headers: 'Authorization: Bearer [ACCESS_TOKEN_OF_USER]'
@@ -209,6 +212,7 @@ Response (Failed - 401 Unauthorized / 403 Forbidden / 404 Not Found)
 { "message": "User not found!" }
 
 'PUT /v1/users/me'
+-----------------------------------------------------------------------------------------------------------------------
 Description: Update the profile information of the current user.
 Authorization required: User & Admin.
 Headers: 'Authorization: Bearer [USER_ACCESS_TOKEN]'
@@ -235,9 +239,9 @@ Response (Success - 200 OK):
 }
 
 Response (Failed - 401/404/500): (Similar to 'GET /users/me', and server side errors)
-* **Notes on current error:** `[Please clearly note the current PUT /users/me error here, if you have not fixed it. For example: "This endpoint is currently returning a 500 error due to an issue that has not been fully debugged. Other functions are working normally."]`
 
 'GET /v1/users'
+-----------------------------------------------------------------------------------------------------------------------
 Description: Get a list of all users in the system. Admin only.
 Authorization required: Admin.
 Headers: 'Authorization: Bearer [ADMIN_ACCESS_TOKEN]'
@@ -255,6 +259,7 @@ Response (Failure - 403 Forbidden):
 { "message": "You don't have this access" }
 
 'PUT /v1/users/:id'
+-----------------------------------------------------------------------------------------------------------------------
 Description: Update any user's profile information by ID. Admin only.
 Authorization required: Admin.
 Headers: 'Authorization: Bearer [ADMIN_ACCESS_TOKEN]'
@@ -274,6 +279,7 @@ Response (Success - 200 OK):
 Response (Failure - 403/404/500): (Similar to 'GET /users', and server side errors)
 
 'DELETE /v1/users/:id'
+-----------------------------------------------------------------------------------------------------------------------
 Description: Deletes a user from the system by their ID. Admin only.
 Authorization Request: Admin.
 Headers: 'Authorization: Bearer [ADMIN_ACCESS_TOKEN]'
@@ -281,3 +287,40 @@ Response (Success - 200 OK):
 
 { "message": "Delete [EMAIL_USERNAME] successfully" }
 Response (Failure - 403/404/500): (Similar to 'GET /users', and server side errors)
+
+🔄 Mock Data Strategy
+-----------------------------------------------------------------------------------------------------------------------------
+To focus on business logic without installing or running a real database, the project uses an 'in-memory data' strategy.
+- Actual database operations (CRUD) are replaced with functions that manipulate JavaScript arrays and objects stored in 'src/data/mockData.js'.
+- The data layer ('userRepo', 'auditLogsRepo', 'notificationLogRepo') is abstracted so that it can be easily migrated to a real database later (e.g. MongoDB, PostgreSQL) without changing the logic at the controller layer.
+Note: 'mockData.js' is shared between the Main Backend (User manage project) and Notification Service via Docker Volumes to simplify mock data management in a multi-service environment.
+
+📧 Microservice Mock Integration (Notification Service)
+-----------------------------------------------------------------------------------------------------------------------------
+- Separate service: 'notification-service' is deployed as a standalone Node.js application, running on a separate port (8082).
+- RESTful communication: The main backend communicates with the Notification Service via HTTP POST requests to the '/send' endpoint. The Notification Service URL is configured via the environment variable ('NOTIFICATION_SERVICE_URL').
+- Communication in Docker Compose: Services communicate with each other using the service name ('notification-service') in the Docker Compose internal network, ensuring stability and scalability.
+- Retry Mechanism: The 'notificationSender' function (in `src/utils/`) has an integrated mechanism to automatically retry several times if the notification request fails, increasing the stability of the integration. Failures are logged in Audit Logs.
+Purpose: Simulate integration with third-party services such as email/SMS providers without actually implementing them.
+
+📝 Audit Logging
+----------------------------------------------------------------------------------------------------------------
+- Every important action in the system (registration, login, profile update, user deletion) is recorded in the audit log.
+- The logs contain details such as 'user_id', 'action', 'timestamp', 'status' (success/failure), and 'request_meta' (additional information about the request).
+- Audit logs are stored in memory ('auditLogs' in 'src/data/mockData.js').
+
+🧠 Bonus Task Completed (Optional)
+-------------------------------------------------------------------------------------------------------------
+Postman Collection: A Postman Collection containing all the implemented APIs will be provided for easy testing.
+Notification Service Error Simulation: Notification service capable of simulating errors (configured via environment variable 'SIMULATE_FAILURE_RATE' in 'notification-service/.env.example') to test the backend's retry mechanism.
+
+🛠️ Technology used
+----------------------------------------------------------------------------------------------------------------
+Language: Node.js
+Framework: Express.js
+Authentication: JWT (JSON Web Tokens)
+Password hashing: bcrypt
+Generate UUID: 'uuid'
+HTTP Client: 'axios' (to call the microservice)
+Environment variable: 'dotenv'
+Containerization: Docker & Docker Compose
