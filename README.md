@@ -121,6 +121,43 @@ node app.js
 ```
 7. Access the API: (Similar to Docker Compose)
 
+🔄 Mock Data Strategy
+-----------------------------------------------------------------------------------------------------------------------------
+To focus on business logic without installing or running a real database, the project uses an 'in-memory data' strategy.
+- Actual database operations (CRUD) are replaced with functions that manipulate JavaScript arrays and objects stored in 'src/data/mockData.js'.
+- The data layer ('userRepo', 'auditLogsRepo', 'notificationLogRepo') is abstracted so that it can be easily migrated to a real database later (e.g. MongoDB, PostgreSQL) without changing the logic at the controller layer.
+Note: 'mockData.js' is shared between the Main Backend (User manage project) and Notification Service via Docker Volumes to simplify mock data management in a multi-service environment.
+
+📧 Microservice Mock Integration (Notification Service)
+-----------------------------------------------------------------------------------------------------------------------------
+- Separate service: 'notification-service' is deployed as a standalone Node.js application, running on a separate port (8082).
+- RESTful communication: The main backend communicates with the Notification Service via HTTP POST requests to the '/send' endpoint. The Notification Service URL is configured via the environment variable ('NOTIFICATION_SERVICE_URL').
+- Communication in Docker Compose: Services communicate with each other using the service name ('notification-service') in the Docker Compose internal network, ensuring stability and scalability.
+- Retry Mechanism: The 'notificationSender' function (in `src/utils/`) has an integrated mechanism to automatically retry several times if the notification request fails, increasing the stability of the integration. Failures are logged in Audit Logs.
+Purpose: Simulate integration with third-party services such as email/SMS providers without actually implementing them.
+
+📝 Audit Logging
+----------------------------------------------------------------------------------------------------------------
+- Every important action in the system (registration, login, profile update, user deletion) is recorded in the audit log.
+- The logs contain details such as 'user_id', 'action', 'timestamp', 'status' (success/failure), and 'request_meta' (additional information about the request).
+- Audit logs are stored in memory ('auditLogs' in 'src/data/mockData.js').
+
+🧠 Bonus Task Completed (Optional)
+-------------------------------------------------------------------------------------------------------------
+Postman Collection: A Postman Collection containing all the implemented APIs will be provided for easy testing.
+Notification Service Error Simulation: Notification service capable of simulating errors (configured via environment variable 'SIMULATE_FAILURE_RATE' in 'notification-service/.env.example') to test the backend's retry mechanism.
+
+🛠️ Technology used
+----------------------------------------------------------------------------------------------------------------
+- Language: Node.js
+- Framework: Express.js
+- Authentication: JWT (JSON Web Tokens)
+- Password hashing: bcrypt
+- Generate UUID: 'uuid'
+- HTTP Client: 'axios' (to call the microservice)
+- Environment variable: 'dotenv'
+- Containerization: Docker & Docker Compose
+
 📚 API Documentation
 -----------------------------------------------------------------------------------------------------------------------
 The system provides the following RESTful endpoints:
@@ -288,39 +325,3 @@ Response (Success - 200 OK):
 { "message": "Delete [EMAIL_USERNAME] successfully" }
 Response (Failure - 403/404/500): (Similar to 'GET /users', and server side errors)
 
-🔄 Mock Data Strategy
------------------------------------------------------------------------------------------------------------------------------
-To focus on business logic without installing or running a real database, the project uses an 'in-memory data' strategy.
-- Actual database operations (CRUD) are replaced with functions that manipulate JavaScript arrays and objects stored in 'src/data/mockData.js'.
-- The data layer ('userRepo', 'auditLogsRepo', 'notificationLogRepo') is abstracted so that it can be easily migrated to a real database later (e.g. MongoDB, PostgreSQL) without changing the logic at the controller layer.
-Note: 'mockData.js' is shared between the Main Backend (User manage project) and Notification Service via Docker Volumes to simplify mock data management in a multi-service environment.
-
-📧 Microservice Mock Integration (Notification Service)
------------------------------------------------------------------------------------------------------------------------------
-- Separate service: 'notification-service' is deployed as a standalone Node.js application, running on a separate port (8082).
-- RESTful communication: The main backend communicates with the Notification Service via HTTP POST requests to the '/send' endpoint. The Notification Service URL is configured via the environment variable ('NOTIFICATION_SERVICE_URL').
-- Communication in Docker Compose: Services communicate with each other using the service name ('notification-service') in the Docker Compose internal network, ensuring stability and scalability.
-- Retry Mechanism: The 'notificationSender' function (in `src/utils/`) has an integrated mechanism to automatically retry several times if the notification request fails, increasing the stability of the integration. Failures are logged in Audit Logs.
-Purpose: Simulate integration with third-party services such as email/SMS providers without actually implementing them.
-
-📝 Audit Logging
-----------------------------------------------------------------------------------------------------------------
-- Every important action in the system (registration, login, profile update, user deletion) is recorded in the audit log.
-- The logs contain details such as 'user_id', 'action', 'timestamp', 'status' (success/failure), and 'request_meta' (additional information about the request).
-- Audit logs are stored in memory ('auditLogs' in 'src/data/mockData.js').
-
-🧠 Bonus Task Completed (Optional)
--------------------------------------------------------------------------------------------------------------
-Postman Collection: A Postman Collection containing all the implemented APIs will be provided for easy testing.
-Notification Service Error Simulation: Notification service capable of simulating errors (configured via environment variable 'SIMULATE_FAILURE_RATE' in 'notification-service/.env.example') to test the backend's retry mechanism.
-
-🛠️ Technology used
-----------------------------------------------------------------------------------------------------------------
-Language: Node.js
-Framework: Express.js
-Authentication: JWT (JSON Web Tokens)
-Password hashing: bcrypt
-Generate UUID: 'uuid'
-HTTP Client: 'axios' (to call the microservice)
-Environment variable: 'dotenv'
-Containerization: Docker & Docker Compose
